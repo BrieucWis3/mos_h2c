@@ -1,0 +1,290 @@
+<?php
+
+namespace App\Controller;
+
+
+
+use App\Controller\AppController;
+
+use Cake\ORM\TableRegistry;
+
+use Cake\Error\Debugger;
+
+use Cake\Network\Request;
+
+
+
+/**
+
+ * Filiereclientpartages Controller
+
+ *
+
+ * @property \App\Model\Table\FiliereclientpartagesTable $Filiereclientpartages
+
+ */
+
+class FiliereclientpartagesController extends AppController
+
+{
+
+
+
+    /**
+
+     * Index method
+
+     *
+
+     * @return void
+
+     */
+
+    public function index()
+
+    {
+
+        $filiereclientpartages = TableRegistry::get('Filiereclientpartages');
+
+		$filiereclientpartages = $filiereclientpartages->find('All')->order(['created' => 'DESC']);
+
+		$query = TableRegistry::get('Filieres');
+
+		$filieres = $query->find('All');
+
+		$this->set('filiereclientpartages', $this->paginate($this->Filiereclientpartages));
+
+		$this->set(compact('filiereclientpartages', 'filieres'));
+
+		$this->set('_serialize', ['filiereclientpartages']);
+
+    }
+
+
+
+    /**
+
+     * Edit method
+
+     *
+
+     * @param string|null $id Filiereclientpartage id.
+
+     * @return void Redirects on successful edit, renders view otherwise.
+
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+
+     */
+
+    public function edit($id = null)
+
+    {
+
+		$retour='';
+
+		$query = TableRegistry::get('Filiereclientpartages');
+
+		$total = $query->find()->where(['filiere_id' => $id])->count();
+
+		if($total!= 0 ){
+
+			$total = $query
+
+				->find()
+
+				->where(['filiere_id' => $id])
+
+				->first();
+
+			$filiereclientpartage = $this->Filiereclientpartages->get($total->id,	[
+
+																		'contain' => ['Users', 'Filieres']
+
+																	]);
+
+		} else {
+
+			$filiereclientpartage = $this->Filiereclientpartages->newEntity();
+
+		}
+
+		if ($this->request->is(['patch', 'post', 'put'])) {
+
+			$i=0;
+
+			if(isset($_POST['users'])){
+
+				/*$result = count($_POST['users']['_ids']);
+
+				for($i=0;$i<$result;$i++){*/
+
+					$filiereclientpartage = $this->Filiereclientpartages->newEntity();
+
+					//$filiereclientpartage->user_id=$_POST['users']['_ids'][$i];
+
+					$filiereclientpartage->user_id=$_POST['users'];
+
+					$filiereclientpartage->filiere_id=$id;
+
+					$retour=$this->Filiereclientpartages->save($filiereclientpartage);
+
+				//}
+
+				if($retour){
+
+					$this->Flash->success(__('Le partage de la fiche formation a bien été réalisé.'));
+
+				} else {
+
+					$this->Flash->error(__('Le partage de la fiche formation n\'a pas pu être réalisé. Veuillez réessayer.'));
+
+				}
+
+			}
+
+		}
+
+		$users = $this->Filiereclientpartages->Users->find()
+
+									->where(['profil_id ' => 1])
+
+									->map(function ($row) { // map() est une méthode de collection, elle exécute la requête
+
+										$row->nomcomplet = trim($row->nom).' '.trim($row->prenom).' ('.trim($row->email).') ';
+
+										return $row;
+
+									})
+
+									->combine('id', 'nomcomplet') // combine() est une autre méthode de collection
+
+									->toArray(); // Aussi une méthode de la librairie collection
+
+		$filieres = $this->Filiereclientpartages->Filieres->find('list')->select(['id', 'title'])->where(['id' => $id]);
+
+		$dejapartage = $this->Filiereclientpartages->find()->select(['user_id', 'usr.nom', 'usr.prenom', 'usr.email'])
+
+														->hydrate(false)
+
+														->where(['filiere_id ' => $id])
+
+														->join([
+
+															'table' => 'users',
+
+															'alias' => 'usr',
+
+															'type' => 'LEFT',
+
+															'select' => array('nom', 'prenom', 'email'),
+
+															'conditions' => 'usr.id=user_id ']);
+
+		$this->set(compact('filiereclientpartage', 'users', 'filieres', 'dejapartage'));
+
+        $this->set('_serialize', ['docclientpartage']);
+
+    }
+
+
+
+    /**
+
+     * Delete method
+
+     *
+
+     * @param string|null $id Filiereclientpartage id.
+
+     * @return \Cake\Network\Response|null Redirects to index.
+
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+
+     */
+
+    public function delete($id = null)
+
+    {
+
+		$filiereclientpartage = TableRegistry::get('Filiereclientpartages');
+
+		$filiereclientpartage = $filiereclientpartage->find('all')
+
+											->where(['filiere_id' => $id])
+
+											->toArray();
+
+		$nomdoc = TableRegistry::get('Filieres');
+
+		$nomdoc = $nomdoc->find('list')
+
+							->select('title')
+
+							->where(['id' => $id]);
+
+		$this->set(compact('filiereclientpartage', 'users', 'filieres', 'nomdoc'));
+
+        $this->set('_serialize', ['filiereclientpartage']);
+
+    }
+
+
+
+	/* Suppression d'un Client du Partage de la Fiche Formation */
+
+	public function realise($id = null)
+
+    {
+
+		$this->autoRender = false;
+
+		$supcli = TableRegistry::get('Filiereclientpartages');
+
+		// Commence une nouvelle requête.
+
+		$query = $supcli->get($id);
+
+		$metierid=$query->filiere_id;
+
+		if ($supcli->delete($query)) {
+
+			$this->Flash->success('La cession de partage de la fiche formation a bien été réalisée.');
+
+			return $this->redirect(['action' => 'delete', $metierid]);
+
+		} else {
+
+			$this->Flash->error('La cession de partage de la fiche formation n\'a pas pu être réalisée. Veuillez réessayer.');
+
+		}
+
+	}
+
+	
+
+	/* Affichage de la Liste des Fiches Filières Disponible pour un Client */
+
+	public function mesfiches($id = null)
+
+	{
+
+		$filiereclientpartages = TableRegistry::get('Filiereclientpartages');
+
+		$filiereclientpartages = $filiereclientpartages->find('All')->where(['user_id' => $this->Auth->user('id')]);
+
+		$query = TableRegistry::get('Filieres');
+
+		$filieres = $query->find('All');
+
+		$this->set('filiereclientpartages', $this->paginate($this->Filiereclientpartages));
+
+		$this->set(compact('filiereclientpartages', 'filieres'));
+
+		$this->set('_serialize', ['filiereclientpartages']);
+
+	}
+
+	
+
+}
+
