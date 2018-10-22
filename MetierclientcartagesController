@@ -1,0 +1,418 @@
+<?php
+
+namespace App\Controller;
+
+
+
+use App\Controller\AppController;
+
+use Cake\ORM\TableRegistry;
+
+use Cake\Error\Debugger;
+
+use Cake\Network\Request;
+
+
+
+/**
+
+ * Metierclientpartages Controller
+
+ *
+
+ * @property \App\Model\Table\MetierclientpartagesTable $Metierclientpartages
+
+ */
+
+class MetierclientpartagesController extends AppController
+
+{
+
+
+
+    /**
+
+     * Index method
+
+     *
+
+     * @return void
+
+     */
+
+    public function index()
+
+    {
+
+        $metierclientpartages = TableRegistry::get('Metierclientpartages');
+
+		$metierclientpartages = $metierclientpartages->find('All')->order(['created' => 'DESC']);
+
+		$query = TableRegistry::get('Bookmarks');
+
+		$bookmarks = $query->find('All');
+
+		$this->set('metierclientpartages', $this->paginate($this->Metierclientpartages));
+
+		$this->set(compact('metierclientpartages', 'bookmarks'));
+
+		$this->set('_serialize', ['metierclientpartages']);
+
+    }
+
+
+
+    /**
+
+     * View method
+
+     *
+
+     * @param string|null $id Metierclientpartage id.
+
+     * @return void
+
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+
+     */
+
+    /*public function view($id = null)
+
+    {
+
+        $metierclientpartage = $this->Metierclientpartages->get($id, [
+
+            'contain' => ['Users', 'Metiers']
+
+        ]);
+
+        $this->set('metierclientpartage', $metierclientpartage);
+
+        $this->set('_serialize', ['metierclientpartage']);
+
+    }*/
+
+
+
+    /**
+
+     * Add method
+
+     *
+
+     * @return void Redirects on successful add, renders view otherwise.
+
+     */
+
+   /* public function add()
+
+    {
+
+        $metierclientpartage = $this->Metierclientpartages->newEntity();
+
+        if ($this->request->is('post')) {
+
+            $metierclientpartage = $this->Metierclientpartages->patchEntity($metierclientpartage, $this->request->data);
+
+            if ($this->Metierclientpartages->save($metierclientpartage)) {
+
+                $this->Flash->success(__('The metierclientpartage has been saved.'));
+
+                return $this->redirect(['action' => 'index']);
+
+            } else {
+
+                $this->Flash->error(__('The metierclientpartage could not be saved. Please, try again.'));
+
+            }
+
+        }
+
+        $users = $this->Metierclientpartages->Users->find('list', ['limit' => 200]);
+
+        $metiers = $this->Metierclientpartages->Metiers->find('list', ['limit' => 200]);
+
+        $this->set(compact('metierclientpartage', 'users', 'metiers'));
+
+        $this->set('_serialize', ['metierclientpartage']);
+
+    }*/
+
+
+
+    /**
+
+     * Edit method
+
+     *
+
+     * @param string|null $id Metierclientpartage id.
+
+     * @return void Redirects on successful edit, renders view otherwise.
+
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+
+     */
+
+    public function edit($id = null)
+
+    {
+
+        /*$metierclientpartage = $this->Metierclientpartages->get($id, [
+
+            'contain' => []
+
+        ]);
+
+        if ($this->request->is(['patch', 'post', 'put'])) {
+
+            $metierclientpartage = $this->Metierclientpartages->patchEntity($metierclientpartage, $this->request->data);
+
+            if ($this->Metierclientpartages->save($metierclientpartage)) {
+
+                $this->Flash->success(__('The metierclientpartage has been saved.'));
+
+                return $this->redirect(['action' => 'index']);
+
+            } else {
+
+                $this->Flash->error(__('The metierclientpartage could not be saved. Please, try again.'));
+
+            }
+
+        }
+
+        $users = $this->Metierclientpartages->Users->find('list', ['limit' => 200]);
+
+        $metiers = $this->Metierclientpartages->Metiers->find('list', ['limit' => 200]);
+
+        $this->set(compact('metierclientpartage', 'users', 'metiers'));
+
+        $this->set('_serialize', ['metierclientpartage']);*/
+
+		
+
+		$retour='';
+
+		$query = TableRegistry::get('Metierclientpartages');
+
+		$total = $query->find()->where(['metier_id' => $id])->count();
+
+		if($total!= 0 ){
+
+			$total = $query
+
+				->find()
+
+				->where(['metier_id' => $id])
+
+				->first();
+
+			$metierclientpartage = $this->Metierclientpartages->get($total->id,	[
+
+																		'contain' => ['Users', 'Bookmarks']
+
+																	]);
+
+		} else {
+
+			$metierclientpartage = $this->Metierclientpartages->newEntity();
+
+		}
+
+		if ($this->request->is(['patch', 'post', 'put'])) {
+
+            $i=0;
+
+			if(isset($_POST['users'])){
+
+				/*$result = count($_POST['users']['_ids']);
+
+				for($i=0;$i<$result;$i++){*/
+
+					$metierclientpartage = $this->Metierclientpartages->newEntity();
+
+					//$metierclientpartage->user_id=$_POST['users']['_ids'][$i];
+
+					$metierclientpartage->user_id=$_POST['users'];
+
+					$metierclientpartage->metier_id=$id;
+
+					$retour=$this->Metierclientpartages->save($metierclientpartage);
+
+				//}
+
+				if($retour){
+
+					$this->Flash->success(__('Le partage de la fiche métier a bien été réalisé.'));
+
+				} else {
+
+					$this->Flash->error(__('Le partage de la fiche métier n\'a pas pu être réalisé. Veuillez réessayer.'));
+
+				}
+
+			}
+
+        }
+
+        $users = $this->Metierclientpartages->Users->find()
+
+									->where(['profil_id ' => 1])
+
+									->map(function ($row) { // map() est une méthode de collection, elle exécute la requête
+
+										$row->nomcomplet = trim($row->nom).' '.trim($row->prenom).' ('.trim($row->email).') ';
+
+										return $row;
+
+									})
+
+									->combine('id', 'nomcomplet') // combine() est une autre méthode de collection
+
+									->toArray(); // Aussi une méthode de la librairie collection
+
+		$metiers = $this->Metierclientpartages->Bookmarks->find('list')->select(['id', 'title'])->where(['id' => $id]);
+
+		$dejapartage = $this->Metierclientpartages->find()->select(['user_id', 'usr.nom', 'usr.prenom', 'usr.email'])
+
+														->hydrate(false)
+
+														->where(['metier_id ' => $id])
+
+														->join([
+
+															'table' => 'users',
+
+															'alias' => 'usr',
+
+															'type' => 'LEFT',
+
+															'select' => array('nom', 'prenom', 'email'),
+
+															'conditions' => 'usr.id=user_id ']);
+
+		$this->set(compact('metierclientpartage', 'users', 'metiers', 'dejapartage'));
+
+        $this->set('_serialize', ['docclientpartage']);
+
+    }
+
+
+
+    /**
+
+     * Delete method
+
+     *
+
+     * @param string|null $id Metierclientpartage id.
+
+     * @return \Cake\Network\Response|null Redirects to index.
+
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+
+     */
+
+    public function delete($id = null)
+
+    {
+
+        /*$this->request->allowMethod(['post', 'delete']);
+
+        $metierclientpartage = $this->Metierclientpartages->get($id);
+
+        if ($this->Metierclientpartages->delete($metierclientpartage)) {
+
+            $this->Flash->success(__('The metierclientpartage has been deleted.'));
+
+        } else {
+
+            $this->Flash->error(__('The metierclientpartage could not be deleted. Please, try again.'));
+
+        }
+
+        return $this->redirect(['action' => 'index']);*/
+
+		
+
+		$metierclientpartage = TableRegistry::get('Metierclientpartages');
+
+		$metierclientpartage = $metierclientpartage->find('all')
+
+											->where(['metier_id' => $id])
+
+											->toArray();
+
+		$nomdoc = TableRegistry::get('Bookmarks');
+
+		$nomdoc = $nomdoc->find('list')
+
+							->select('title')
+
+							->where(['id' => $id]);
+
+		$this->set(compact('metierclientpartage', 'users', 'metiers', 'nomdoc'));
+
+        $this->set('_serialize', ['metierclientpartage']);
+
+    }
+
+
+
+	/* Suppression d'un Client du Partage de la Fiche Métier */
+
+	public function realise($id = null)
+
+    {
+
+		$this->autoRender = false;
+
+		$supcli = TableRegistry::get('Metierclientpartages');
+
+		// Commence une nouvelle requête.
+
+		$query = $supcli->get($id);
+
+		$metierid=$query->metier_id;
+
+		if ($supcli->delete($query)) {
+
+			$this->Flash->success('La cession de partage de la fiche métier a bien été réalisée.');
+
+			return $this->redirect(['action' => 'delete', $metierid]);
+
+		} else {
+
+			$this->Flash->error('La cession de partage de la fiche métier n\'a pas pu être réalisée. Veuillez réessayer.');
+
+		}
+
+	}
+
+	
+
+	/* Affichage de la Liste des Fiches Métiers Disponible pour un Client */
+
+	public function mesfiches($id = null)
+
+	{
+
+		$metierclientpartages = TableRegistry::get('Metierclientpartages');
+
+		$metierclientpartages = $metierclientpartages->find('All')->where(['user_id' => $this->Auth->user('id')]);
+
+		$query = TableRegistry::get('Bookmarks');
+
+		$bookmarks = $query->find('All');
+
+		$this->set('metierclientpartages', $this->paginate($this->Metierclientpartages));
+
+		$this->set(compact('metierclientpartages', 'bookmarks'));
+
+		$this->set('_serialize', ['metierclientpartages']);
+
+	}
+
+}
+
