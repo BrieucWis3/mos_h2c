@@ -1,0 +1,742 @@
+<?php
+	namespace App\Controller;
+
+	use Cake\View\View;
+	use App\Controller\AppController;
+	use Cake\ORM\TableRegistry;
+	use Cake\Error\Debugger;
+	use Cake\I18n\Time;
+
+	/**
+	 * Filieres Controller
+	 *
+	 * @property \App\Model\Table\FilieresTable $Filieres
+	 */
+	class FilieresController extends AppController
+	{
+		
+		public function initialize()
+		{
+			parent::initialize();
+
+			if ($this->request->action === 'index') {
+				$this->loadComponent('Search.Prg');
+			}
+		}
+		
+		/**
+		 * Index method
+		 *
+		 * @return void
+		 */
+		public function index()
+		{
+			/*$filieres = TableRegistry::get('filieres');
+			$filieres = $filieres->find('All')->order(['title' => 'ASC']);
+			$this->set('filieres', $this->paginate($filieres));
+			$this->set('_serialize', ['filieres']);*/
+			
+			/*$query = $this->Filieres
+						// Use the plugins 'search' custom finder and pass in the
+						// processed query params
+						->find('search', $this->Filieres->filterParams($this->request->query))
+						->order(['title' => 'ASC']);
+						// You can add extra things to the query if you need to
+						//->contain(['Comments'])
+						//->where(['title IS NOT' => null]);
+
+			$this->set('filieres', $this->paginate($query));
+			$this->set('_serialize', ['filieres']);*/
+			
+			$lapage=str_replace("webroot/", "", $_SERVER['REDIRECT_URL']);
+		
+			if(isset($_GET) && !empty($_GET)){
+				$query2 = TableRegistry::get('Filieres');
+				if((strlen($_GET['Titre'])===1) && (isset($_GET['Titre']))){
+					$meslistes = $query2->find('All')->where(function ($exp, $q) {
+																return $exp->like('title', $_GET['Titre'].'%');
+															 });
+				}else{
+					/*$meslistes = $query2->find('All')->where(function ($exp, $q) {
+																return $exp->like('title', '%'.$_GET['Titre'].'%');
+															 });*/
+					if((!empty($_GET['Filtre'])) && (isset($_GET['Filtre']))){
+						$meslistes = $query2->find('All')->where(function ($exp, $q) {
+																	return $exp->like('title', '%'.$_GET['Filtre'].'%');
+																 });
+					}
+				}
+				$query = $this->Filieres
+							// Use the plugins 'search' custom finder and pass in the
+							// processed query params
+							->find('search', $this->Filieres->filterParams($this->request->query));
+							// You can add extra things to the query if you need to
+							//->contain(['Comments'])
+							//->where(['title IS NOT' => null]);
+
+				$this->set('filieres', $this->paginate($query));
+				$this->set(compact('lapage'));
+				$this->set(compact('meslistes'));
+				$this->set('_serialize', ['filieres']);
+			}else{
+				$query = $this->Filieres
+							// Use the plugins 'search' custom finder and pass in the
+							// processed query params
+							->find('search', $this->Filieres->filterParams($this->request->query))
+							->order(['title' => 'ASC']);
+							// You can add extra things to the query if you need to
+							//->contain(['Comments'])
+							//->where(['title IS NOT' => null]);
+
+				$this->set('filieres', $this->paginate($query));
+				$this->set(compact('lapage'));
+				$this->set('_serialize', ['filieres']);
+			}
+		}
+
+		/**
+		 * View method
+		 *
+		 * @param string|null $id Filiere id.
+		 * @return void
+		 * @throws \Cake\Network\Exception\NotFoundException When record not found.
+		 */
+		public function view($id = null)
+		{
+			$filiere = $this->Filieres->get($id, [
+				'contain' => ['Users', 'Tags']
+			]);
+			$this->set('filiere', $filiere);
+			$this->set('_serialize', ['filiere']);
+		}
+
+		/**
+		 * Add method
+		 *
+		 * @return void Redirects on successful add, renders view otherwise.
+		 */
+		public function add()
+		{
+			$filiere = $this->Filieres->newEntity();
+			if ($this->request->is('post')) {
+				$filiere = $this->Filieres->patchEntity($filiere, $this->request->data);
+				$filiere->user_id = $this->Auth->user('id');
+				if ($this->Filieres->save($filiere)) {
+					$this->Flash->success(__('La fiche Filière a été sauvegardée.'));
+					return $this->redirect(['action' => 'index']);
+				} else {
+					$this->Flash->error(__('La fiche Filière ne peut pas être sauvegardée. Merci de réessayer.'));
+				}
+			}
+			$users = $this->Filieres->Users->find('list', ['limit' => 200]);
+			$tags = $this->Filieres->Tags->find('list', ['limit' => 200]);
+			$this->set(compact('filiere', 'users', 'tags'));
+			$this->set('_serialize', ['filiere']);
+		}
+		
+		/**
+		 * Duplicate method
+		 *
+		 * @return void Redirects on successful duplicate, renders view otherwise.
+		 */
+		public function duplicate($id = null)
+		{
+			$filiere = $this->Filieres->get($id);
+			$filieresTable = TableRegistry::get('Filieres');
+			$dupfiliere = $filieresTable->newEntity();
+			$dupfiliere->user_id = $this->Auth->user('id');
+			$dupfiliere->title = $filiere->title.'_copie-'.$this->Auth->user('prenom');
+			$dupfiliere->entete = $filiere->entete;
+			$dupfiliere->nivetude = $filiere->nivetude;
+			$dupfiliere->contpedago = $filiere->contpedago;
+			$dupfiliere->carte = $filiere->carte;
+			$dupfiliere->caractentre = $filiere->caractentre;
+			$dupfiliere->modeemploi = $filiere->modeemploi;
+			$dupfiliere->lienutile = $filiere->lienutile;
+			$dupfiliere->hebergement = $filiere->hebergement;
+			$dupfiliere->transport = $filiere->transport;
+			$dupfiliere->emploietudiant = $filiere->emploietudiant;
+			$dupfiliere->financement = $filiere->financement;
+			$dupfiliere->commentaire = $filiere->commentaire;
+			$now = Time::now();
+			$dupfiliere->created = $now->i18nFormat('YYYY-MM-dd_HH-mm-ss');
+			$dupfiliere->modified = $filiere->modified;
+			if ($filieresTable->save($dupfiliere)) {
+				// L'entity $article contient maintenant l'id
+				$id = $dupfiliere->id;
+			}
+			if ($this->Filieres->save($dupfiliere)) {
+				$this->Flash->success(__('La fiche Filière a été dupliquée.'));
+				return $this->redirect(['action' => 'index']);
+			} else {
+				$this->Flash->error(__('La fiche Filière ne peut pas être dupliquée. Merci de réessayer.'));
+			}
+			$this->set(compact('filiere'));
+			//$this->set('_serialize', ['filiere']);
+		}
+	
+		/**
+		 * Edit method
+		 *
+		 * @param string|null $id Filiere id.
+		 * @return void Redirects on successful edit, renders view otherwise.
+		 * @throws \Cake\Network\Exception\NotFoundException When record not found.
+		 */
+		public function edit($id=null, $nomchampbdd=null)
+		{
+			if(!is_null($nomchampbdd)){
+				$filiere = $this->Filieres->get($id, [
+					'contain' => ['Tags']
+				]);
+				$btnformats = TableRegistry::get('Formatfiches');
+				$btnformats = $btnformats->find('All')->where(['typefiche' => 'formation']);
+				if ($this->request->is(['patch', 'post', 'put'])) {
+					$filiere = $this->Filieres->patchEntity($filiere, $this->request->data);
+					if ($this->Filieres->save($filiere)) {
+						$this->Flash->success(__('La fiche Filière a été sauvegardée.'));
+						return $this->redirect(['action' => 'edit',$filiere->id]);
+					} else {
+						$this->Flash->error(__('La fiche Filière ne peut pas être sauvegardée. Merci de réessayer.'));
+					}
+				}
+				$tags = $this->Filieres->Tags->find('list');
+				$this->set(compact('filiere', 'tags', 'btnformats','nomchampbdd'));
+				$this->set('_serialize', ['filiere']);
+			}else{
+				$filiere = $this->Filieres->get($id, [
+					'contain' => ['Tags']
+				]);
+				$btnformats = TableRegistry::get('Formatfiches');
+				$btnformats = $btnformats->find('All')->where(['typefiche' => 'formation']);
+				if ($this->request->is(['patch', 'post', 'put'])) {
+					$filiere = $this->Filieres->patchEntity($filiere, $this->request->data);
+					if ($this->Filieres->save($filiere)) {
+						$this->Flash->success(__('La fiche Filière a été sauvegardée.'));
+						return $this->redirect(['action' => 'edit',$filiere->id]);
+					} else {
+						$this->Flash->error(__('La fiche Filière ne peut pas être sauvegardée. Merci de réessayer.'));
+					}
+				}
+				/*$users = $this->Filieres->Users->find('list', ['limit' => 200]);
+				$tags = $this->Filieres->Tags->find('list', ['limit' => 200]);
+				$this->set(compact('filiere', 'users', 'tags'));
+				$this->set('_serialize', ['filiere']);*/
+				$tags = $this->Filieres->Tags->find('list');
+				//$this->set(compact('filiere', 'tags'));
+				$this->set(compact('filiere', 'tags', 'btnformats'));
+				$this->set('_serialize', ['filiere']);
+			}
+		}
+
+		/**
+		 * Delete method
+		 *
+		 * @param string|null $id Filiere id.
+		 * @return void Redirects to index.
+		 * @throws \Cake\Network\Exception\NotFoundException When record not found.
+		 */
+		public function delete($id = null)
+		{
+			$this->request->allowMethod(['post', 'delete']);
+			$filiere = $this->Filieres->get($id);
+			if ($this->Filieres->delete($filiere)) {
+				$this->Flash->success(__('La fiche Filière a été supprimée.'));
+			} else {
+				$this->Flash->error(__('La fiche Filière ne peut pas être supprimée. Merci de réessayer.'));
+			}
+			return $this->redirect(['action' => 'index']);
+		}
+		
+		/*function create()
+		{
+				var_dump($this->request->data);
+				
+				if(!empty($this->request->data))
+				{
+					//Check if image has been uploaded
+					if(!empty($this->request->data['Filiere']['upload']['name']))
+					{
+							$file = $this->request->data['Filiere']['upload']; //put the data into a var for easy use
+
+							$ext = substr(strtolower(strrchr($file['name'], '.')), 1); //get the extension
+							$arr_ext = array('jpg', 'jpeg', 'gif'); //set allowed extensions
+
+							//only process if the extension is valid
+							if(in_array($ext, $arr_ext))
+							{
+									//do the actual uploading of the file. First arg is the tmp name, second arg is 
+									//where we are putting it
+									move_uploaded_file($file['tmp_name'], WWW_ROOT . 'img/uploads/filieres/' . $file['name']);
+
+									//prepare the filename for database entry
+									$this->data['Filiere']['image'] = $file['name'];
+							}
+					}
+
+					
+				}
+		}*/
+		
+		public function isAuthorized($user)
+		{
+			$action = $this->request->params['action'];
+
+			// Add et index sont toujours permises.
+			if (in_array($action, ['index', 'add', 'tags', 'trititrecroissant', 'trititredecroissant', 'tricreacroissant', 
+									'tricreadecroissant', 'trimodifcroissant', 'trimodifdecroissant'])) {
+				return true;
+			}
+			
+			// Tout autre action nécessite un id.
+			if (empty($this->request->params['pass'][0])) {
+				return false;
+			}
+
+			// Vérifie que la filière appartient à l'utilisateur courant.
+			$id = $this->request->params['pass'][0];
+			$bookmark = $this->Filieres->get($id);
+			if ($bookmark->user_id == $user['id']) {
+				return true;
+			}
+			
+			// Tous les utilisateurs enregistrés peuvent ajouter des filière
+			if ($this->request->action === 'add') {
+				return true;
+			}
+
+			// Le propriétaire d'une filière peut l'éditer et le supprimer
+			if (in_array($this->request->action, ['edit', 'delete'])) {
+				$filieresId = (int)$this->request->params['pass'][0];
+				if ($this->Filieres->isOwnedBy($filieresId, $user['id'])) {
+					return true;
+				}
+			}
+
+			return parent::isAuthorized($user);
+		}
+		
+		public function generatepdf($id)
+		{
+			if (!is_null($id)) {
+				$mensuel = $this->Filieres->get($id);
+				//Debugger::dump($mensuel);
+				$title = $mensuel->title;
+				$entete = $mensuel->entete;
+				$nivetude = $mensuel->nivetude;
+				$contpedago = $mensuel->contpedago;
+				$carte = $mensuel->carte;
+				$caractentre = $mensuel->caractentre;
+				$modeemploi = $mensuel->modeemploi;
+				$lienutile = $mensuel->lienutile;
+				$hebergement = $mensuel->hebergement;
+				$transport = $mensuel->transport;
+				$emploietudiant = $mensuel->emploietudiant;
+				$financement = $mensuel->financement;
+				$created = $mensuel->created;
+				$modified = $mensuel->modified;
+				//Debugger::dump($title);
+				$now = Time::now();
+				$filename = utf8_decode($title).'_'.$now->i18nFormat('YYYY-MM-dd_HH-mm-ss');
+				//$filename = htmlentities($filename, ENT_NOQUOTES, 'utf-8');
+				//Debugger::dump($filename);
+				$filename = preg_replace("#[^a-zA-Z]#", "", $filename);
+				//Debugger::dump($filename);
+				// récupération des données volumétriques pour la période donnée
+				$rapports = TableRegistry::get('filieres');
+				$rapports = $rapports->find('All');
+				//Debugger::dump($rapports);
+				$view = new View();
+				/*$view->set(compact('id', 'title', 'definition', 'description', 'actsecteur', 'employeur', 'asavoir', 'competcle', 
+								'nivetude', 'typecontrat', 'salaire', 'tendmarche', 'recrutement', 'autremetier', 'url', 'created', 
+								'modified', 'rapports', 'filename'));*/
+				$view->set(compact('id', 'title', 'entete', 'nivetude', 'contpedago', 'carte', 'caractentre', 'modeemploi', 'lienutile', 
+									'hebergement', 'transport', 'emploietudiant', 'financement', 'created', 'modified', 'rapports', 'filename'));
+				$viewdata = $view->render('Filieres/pdf/view', 'pdf/default');
+				// on vérifie si le fichier existe bien
+				//if (file_exists(APP.'files'.DS.'pdf'.DS.$filename.'.pdf')) {
+				if (file_exists(WWW_ROOT.'files'.DS.'pdf'.DS.$filename.'.pdf')) {
+					//$this->set('filieres', $this->paginate($this->Filieres));
+					//$this->set('_serialize', ['filieres']);
+					$query = $this->Filieres
+								// Use the plugins 'search' custom finder and pass in the
+								// processed query params
+								->find('search', $this->Filieres->filterParams($this->request->query));
+								// You can add extra things to the query if you need to
+								//->contain(['Comments'])
+								//->where(['title IS NOT' => null]);
+
+					$this->set('filieres', $this->paginate($query));
+					$this->set('_serialize', ['filieres']);
+					return $this->Flash->success(__('La création du fichier PFD s\'est déroulée correctement.'));
+				}
+				else return NULL;
+			} else throw new Exception\ForbiddenException(__('Référence obligatoire'));
+		}
+		
+		public function downloadpdf($id)
+		{
+			if (!is_null($id)) {
+				$mensuel = $this->Filieres->get($id);
+				//Debugger::dump($mensuel);
+				$title = $mensuel->title;
+				$entete = $mensuel->entete;
+				$nivetude = $mensuel->nivetude;
+				$contpedago = $mensuel->contpedago;
+				$carte = $mensuel->carte;
+				$caractentre = $mensuel->caractentre;
+				$modeemploi = $mensuel->modeemploi;
+				$lienutile = $mensuel->lienutile;
+				$hebergement = $mensuel->hebergement;
+				$transport = $mensuel->transport;
+				$emploietudiant = $mensuel->emploietudiant;
+				$financement = $mensuel->financement;
+				$created = $mensuel->created;
+				$modified = $mensuel->modified;
+				//Debugger::dump($title);
+				$now = Time::now();
+				$filename = utf8_decode($title).'_'.$now->i18nFormat('YYYY-MM-dd_HH-mm-ss');
+				//$filename = htmlentities($filename, ENT_NOQUOTES, 'utf-8');
+				//Debugger::dump($filename);
+				$filename = preg_replace("#[^a-zA-Z]#", "", $filename);
+				//Debugger::dump($filename);
+				// récupération des données volumétriques pour la période donnée
+				$rapports = TableRegistry::get('filieres');
+				$rapports = $rapports->find('All');
+				//Debugger::dump($rapports);
+				$view = new View();
+				$view->set(compact('id', 'title', 'entete', 'nivetude', 'contpedago', 'carte', 'caractentre', 'modeemploi', 'lienutile', 
+									'hebergement', 'transport', 'emploietudiant', 'financement', 'created', 'modified', 'rapports', 'filename'));
+				$viewdata = $view->render('Filieres/pdf/view', 'pdf/downloadpdf');
+				//$this->response->type('application/pdf');
+			} else throw new Exception\ForbiddenException(__('Référence obligatoire'));
+		}
+		
+		public function viewpdf($id)
+		{
+			if (!is_null($id)) {
+				$mensuel = $this->Filieres->get($id);
+				//Debugger::dump($mensuel);
+				$title = $mensuel->title;
+				$entete = $mensuel->entete;
+				$nivetude = $mensuel->nivetude;
+				$contpedago = $mensuel->contpedago;
+				$carte = $mensuel->carte;
+				$caractentre = $mensuel->caractentre;
+				$modeemploi = $mensuel->modeemploi;
+				$lienutile = $mensuel->lienutile;
+				$hebergement = $mensuel->hebergement;
+				$transport = $mensuel->transport;
+				$emploietudiant = $mensuel->emploietudiant;
+				$financement = $mensuel->financement;
+				$created = $mensuel->created;
+				$modified = $mensuel->modified;
+				//Debugger::dump($title);
+				$now = Time::now();
+				$filename = utf8_decode($title).'_'.$now->i18nFormat('YYYY-MM-dd_HH-mm-ss');
+				//$filename = htmlentities($filename, ENT_NOQUOTES, 'utf-8');
+				//Debugger::dump($filename);
+				$filename = preg_replace("#[^a-zA-Z]#", "", $filename);
+				//Debugger::dump($filename);
+				// récupération des données volumétriques pour la période donnée
+				$rapports = TableRegistry::get('filieres');
+				$rapports = $rapports->find('All');
+				//Debugger::dump($rapports);
+				$view = new View();
+				$view->set(compact('id', 'title', 'entete', 'nivetude', 'contpedago', 'carte', 'caractentre', 'modeemploi', 'lienutile', 
+									'hebergement', 'transport', 'emploietudiant', 'financement', 'created', 'modified', 'rapports', 'filename'));
+				$viewdata = $view->render('Filieres/pdf/view', 'pdf/apercupdf');
+				// on vérifie si le fichier existe bien
+			} else throw new Exception\ForbiddenException(__('Référence obligatoire'));
+		}
+		
+		/* Fonction pour Figer la Couleur du Texte */
+		public function figecouleur($id, $section, $nomchampbdd){
+			/*if ($this->request->is(['patch', 'post', 'put'])) {
+				$filiere = $this->Filieres->get($id, [
+					'contain' => ['Tags']
+				]);
+				$filiere=$this->Filieres->get($id);
+				
+				$filiere = $this->Filieres->patchEntity($filiere, $this->request->data);
+				//debugger::dump($filiere[$nomchampbdd]);
+				if ($this->Filieres->save($filiere)) {
+					//debugger::dump($filiere[$nomchampbdd]);
+					$this->Flash->success(__('La fiche Filière a été sauvegardée.'));
+					//return $this->redirect(['action' => 'edit',$filiere->id]);
+				} else {
+					$this->Flash->error(__('La fiche Filière ne peut pas être sauvegardée. Merci de réessayer.'));
+				}
+			}*/
+			
+			$btnformats = TableRegistry::get('Formatfiches');
+			$btnformats = $btnformats->find('All')->where(['sectionfiche' => $section, 
+															'typefiche' => 'formation'])->toArray();
+			$champs = TableRegistry::get('Filieres');
+			$champ =  $champs->get($id);
+			$champorigine = $champ->$nomchampbdd;
+			$monchamp = $champ->$nomchampbdd;
+			$emplacement=strpos($monchamp, 'style="color:');
+			while($emplacement!=0){
+				$monchamp=substr($champ->$nomchampbdd,$emplacement,21);
+				$couleur=strpos($monchamp, '#');
+				$lacouleur=substr($monchamp,$couleur,7);
+				$monchamp = str_replace($lacouleur, $btnformats[0]['couleurpolice'], $champorigine);
+				$champ->$nomchampbdd = $monchamp;
+				$champs->save($champ);
+				$champorigine = $champ->$nomchampbdd;
+				$emplacement=strpos($monchamp, 'style="color:', ($emplacement+1));
+			}
+			$this->autoRender = false;
+			return $this->redirect(['action' => 'edit',$id,$nomchampbdd]);
+		}
+		
+		/* Fonction pour Figer la Taille du Texte */
+		public function figetaille($id, $section, $nomchampbdd){
+			/*if ($this->request->is(['patch', 'post', 'put'])) {
+				$filiere = $this->Filieres->get($id, [
+					'contain' => ['Tags']
+				]);
+				$filiere = $this->Filieres->patchEntity($filiere, $this->request->data);
+				
+				if ($this->Filieres->save($filiere)) {
+					$this->Flash->success(__('La fiche Filière a été sauvegardée.'));
+					//return $this->redirect(['action' => 'edit',$filiere->id]);
+				} else {
+					$this->Flash->error(__('La fiche Filière ne peut pas être sauvegardée. Merci de réessayer.'));
+				}
+			}
+			
+			debugger::dump($filiere);
+			exit;*/
+			
+			$btnformats = TableRegistry::get('Formatfiches');
+			$btnformats = $btnformats->find('All')->where(['sectionfiche' => $section,
+															'typefiche' => 'formation'])->toArray();
+			$champs = TableRegistry::get('Filieres');
+			$champ =  $champs->get($id);
+			$champorigine = $champ->$nomchampbdd;
+			$monchamp = $champ->$nomchampbdd;
+			$emplacement=strpos($monchamp, 'font-size:');
+			while($emplacement!=0){
+				$monchamp=substr($champ->$nomchampbdd,$emplacement,21);
+				$taille=strpos($monchamp, ':');
+				$lataille=substr($monchamp,($taille+1),4);
+				$monchamp = str_replace($lataille, $btnformats[0]['taillepolice'], $champorigine);
+				$champ->$nomchampbdd = $monchamp;
+				$champs->save($champ);
+				$champorigine = $champ->$nomchampbdd;
+				$emplacement=strpos($monchamp, 'font-size:', ($emplacement+1));
+			}
+			$this->autoRender = false;
+			return $this->redirect(['action' => 'edit',$id,$nomchampbdd]);
+		}
+		
+		/* Fonction pour Figer le Texte en Majuscules, Gras, etc ... */
+		public function figemajuscule($id, $section, $nomchampbdd){
+			/*if ($this->request->is(['patch', 'post', 'put'])) {
+				$filiere = $this->Filieres->get($id, [
+					'contain' => ['Tags']
+				]);
+				$filiere = $this->Filieres->patchEntity($filiere, $this->request->data);
+				if ($this->Filieres->save($filiere)) {
+					$this->Flash->success(__('La fiche Filière a été sauvegardée.'));
+					//return $this->redirect(['action' => 'edit',$filiere->id]);
+				} else {
+					$this->Flash->error(__('La fiche Filière ne peut pas être sauvegardée. Merci de réessayer.'));
+				}
+			}*/
+			$btnformats = TableRegistry::get('Formatfiches');
+			$btnformats = $btnformats->find('All')->where(['sectionfiche' => $section,
+															'typefiche' => 'formation'])->toArray();
+			$champs = TableRegistry::get('Filieres');
+			$champ =  $champs->get($id);
+			$champorigine = $champ->$nomchampbdd;
+			$monchamp = $champ->$nomchampbdd;
+			$val=explode(";", $btnformats[0]['typepolice']);
+			foreach($val as $key=>$res){
+				if($res==="uppercase"){
+					$strupp='style="text-transform: uppercase;" ';
+					$upp=true;
+				}
+				if($res==="bold"){
+					$strgras='style="font-weight: bold;" ';
+					$gras=true;
+				}
+			}
+			if($upp){
+				$tabchaine=explode('style="', $monchamp);
+				foreach($tabchaine as $key => $val){
+					if($key!=0){
+						$val='style="text-transform: uppercase; '.$val;
+						$tabchaine[$key]=$val;
+					}
+				}
+				$newchaine=implode('', $tabchaine);
+				$champ->$nomchampbdd = $newchaine;
+				
+				//debugger::dump($champ->$nomchampbdd);
+				
+				$champs->save($champ);
+				//exit;
+			}
+			if($gras){
+				$monchamp = $champ->$nomchampbdd;
+				$champ->$nomchampbdd = '<strong>'.$monchamp.'</strong>';
+				$champs->save($champ);
+			}
+			$this->autoRender = false;
+			return $this->redirect(['action' => 'edit',$id,$nomchampbdd]);
+		}
+		
+		/* Fonction pour Figer la Couleur du Texte, Sa Taille et Autres Paramètres */
+		public function figetout($id, $section, $nomchampbdd){
+			if ($this->request->is(['patch', 'post', 'put'])) {
+				$filiere = $this->Filieres->get($id, [
+					'contain' => ['Tags']
+				]);
+				$filiere = $this->Filieres->patchEntity($filiere, $this->request->data);
+				if ($this->Filieres->save($filiere)) {
+					$this->Flash->success(__('La fiche Filière a été sauvegardée.'));
+					//return $this->redirect(['action' => 'edit',$filiere->id]);
+				} else {
+					$this->Flash->error(__('La fiche Filière ne peut pas être sauvegardée. Merci de réessayer.'));
+				}
+			}
+			$btnformats = TableRegistry::get('Formatfiches');
+			$btnformats = $btnformats->find('All')->where(['sectionfiche' => $section,
+															'typefiche' => 'formation'])->toArray();
+			$champs = TableRegistry::get('Filieres');
+			$champ =  $champs->get($id);
+			$champorigine = $champ->$nomchampbdd;
+			$monchamp = $champ->$nomchampbdd;
+			/* Couleur */
+			//$champorigine = $champ->$nomchampbdd;
+			//$monchamp = $champ->$nomchampbdd;
+			$emplacement=strpos($monchamp, 'style="color:');
+			while($emplacement!=0){
+				$monchamp=substr($champ->$nomchampbdd,$emplacement,21);
+				$couleur=strpos($monchamp, '#');
+				$lacouleur=substr($monchamp,$couleur,7);
+				$monchamp = str_replace($lacouleur, $btnformats[0]['couleurpolice'], $champorigine);
+				$champ->$nomchampbdd = $monchamp;
+				$champs->save($champ);
+				$champorigine = $champ->$nomchampbdd;
+				$emplacement=strpos($monchamp, 'style="color:', ($emplacement+1));
+			}
+			/* Taille */
+			$champorigine = $champ->$nomchampbdd;
+			$monchamp = $champ->$nomchampbdd;
+			$emplacement=strpos($monchamp, 'font-size:');
+			while($emplacement!=0){
+				$monchamp=substr($champ->$nomchampbdd,$emplacement,21);
+				$taille=strpos($monchamp, ':');
+				$lataille=substr($monchamp,($taille+1),4);
+				$monchamp = str_replace($lataille, $btnformats[0]['taillepolice'], $champorigine);
+				$champ->$nomchampbdd = $monchamp;
+				$champs->save($champ);
+				$champorigine = $champ->$nomchampbdd;
+				$emplacement=strpos($monchamp, 'font-size:', ($emplacement+1));
+			}
+			/* Autres */
+			
+			/*$monchamp = $champ->$nomchampbdd;
+			$emplacement=strpos($monchamp, 'style="');
+			if($emplacement!=0){
+				$val=explode(";", $val['typepolice']);
+				foreach($val as $key=>$res){
+					if($res==="uppercase"){
+						$str='style="text-transform: uppercase;" ';
+						$monchamp = substr_replace($champorigine, $str, $emplacement, 0);
+					}
+					if($res==="bold"){
+						$str='style="font-weight: bold;" ';
+						$monchamp = substr_replace($champorigine, $str, $emplacement, 0);
+					}
+				}
+				$champ->$nomchampbdd = $monchamp;
+				$champs->save($champ);
+			}
+			$this->autoRender = false;
+			return $this->redirect(['action' => 'edit',$id,$nomchampbdd]);*/
+			$champorigine = $champ->$nomchampbdd;
+			$monchamp = $champ->$nomchampbdd;
+			$val=explode(";", $btnformats[0]['typepolice']);
+			foreach($val as $key=>$res){
+				if($res==="uppercase"){
+					$strupp='style="text-transform: uppercase;" ';
+					$upp=true;
+				}
+				if($res==="bold"){
+					$strgras='style="font-weight: bold;" ';
+					$gras=true;
+				}
+			}
+			if($upp){
+				$tabchaine=explode('style="', $monchamp);
+				foreach($tabchaine as $key => $val){
+					if($key!=0){
+						$val='style="text-transform: uppercase; '.$val;
+						$tabchaine[$key]=$val;
+					}
+				}
+				$newchaine=implode('', $tabchaine);
+				$champ->$nomchampbdd = $newchaine;
+				$champs->save($champ);
+			}
+			if($gras){
+				$monchamp = $champ->$nomchampbdd;
+				$champ->$nomchampbdd = '<strong>'.$monchamp.'</strong>';
+				$champs->save($champ);
+			}
+			$this->autoRender = false;
+			return $this->redirect(['action' => 'edit',$id,$nomchampbdd]);
+		}
+		
+		public function trititredecroissant($id=null)
+		{
+			$query2 = TableRegistry::get('Filieres');
+			$filieres = $query2->find('All')->order(['title' => 'DESC']);
+			$this->set('filieres', $this->paginate($filieres));
+			$this->set('_serialize', ['filieres']);
+		}
+		
+		public function trititrecroissant($id=null)
+		{
+			$query2 = TableRegistry::get('Filieres');
+			$filieres = $query2->find('All')->order(['title' => 'ASC']);
+			$this->set('filieres', $this->paginate($filieres));
+			$this->set('_serialize', ['filieres']);
+		}
+		
+		public function tricreacroissant($id=null)
+		{
+			$query2 = TableRegistry::get('Filieres');
+			$filieres = $query2->find('All')->order(['created' => 'ASC']);
+			$this->set('filieres', $this->paginate($filieres));
+			$this->set('_serialize', ['filieres']);
+		}
+		
+		public function tricreadecroissant($id=null)
+		{
+			$query2 = TableRegistry::get('Filieres');
+			$filieres = $query2->find('All')->order(['created' => 'DESC']);
+			$this->set('filieres', $this->paginate($filieres));
+			$this->set('_serialize', ['filieres']);
+		}
+		
+		public function trimodifcroissant($id=null)
+		{
+			$query2 = TableRegistry::get('Filieres');
+			$filieres = $query2->find('All')->order(['modified' => 'ASC']);
+			$this->set('filieres', $this->paginate($filieres));
+			$this->set('_serialize', ['filieres']);
+		}
+		
+		public function trimodifdecroissant($id=null)
+		{
+			$query2 = TableRegistry::get('Filieres');
+			$filieres = $query2->find('All')->order(['modified' => 'DESC']);
+			$this->set('filieres', $this->paginate($filieres));
+			$this->set('_serialize', ['filieres']);
+		}
+	}
