@@ -1,0 +1,244 @@
+<?php
+
+namespace App\Controller;
+
+
+
+use App\Controller\AppController;
+
+use Cake\ORM\TableRegistry;
+
+use Cake\ORM\Query;
+
+use Cake\Error\Debugger;
+
+use Cake\Event\Event;
+
+use Cake\Validation\Validator;
+
+use Cake\Mailer\Email;
+
+use Cake\Mailer\MailerAwareTrait;
+
+
+
+/**
+
+ * Qcmriasecs Controller
+
+ *
+
+ * @property \App\Model\Table\QcmriasecsTable $Qcmriasecs
+
+ */
+
+class QcmriasecsController extends AppController
+
+{
+
+
+
+    /**
+
+     * Index method
+
+     *
+
+     * @return void
+
+     */
+
+    public function index()
+
+    {
+
+        /*$this->paginate = [
+
+            'contain' => ['Users']
+
+        ];*/
+
+        $this->set('qcmriasecs', $this->paginate($this->Qcmriasecs));
+
+        $this->set('_serialize', ['qcmriasecs']);
+
+    }
+
+
+
+    /**
+
+     * View method
+
+     *
+
+     * @param string|null $id Qcmriasec id.
+
+     * @return void
+
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+
+     */
+
+    public function view($id = null)
+
+    {
+
+        /*$qcmriasec = $this->Qcmriasecs->get($id, [
+
+            'contain' => ['Users']
+
+        ]);*/
+
+		$qcmriasec = $this->Qcmriasecs->get($id, [
+
+            'contain' => []
+
+        ]);
+
+        $this->set('qcmriasec', $qcmriasec);
+
+        $this->set('_serialize', ['qcmriasec']);
+
+    }
+
+
+
+    /**
+
+     * Add method
+
+     *
+
+     * @return void Redirects on successful add, renders view otherwise.
+
+     */
+
+    public function add()
+
+    {
+
+        $qcmriasec = $this->Qcmriasecs->newEntity();
+
+        if ($this->request->is('post')) {
+
+            $qcmriasec = $this->Qcmriasecs->patchEntity($qcmriasec, $this->request->data);
+
+            if ($this->Qcmriasecs->save($qcmriasec)) {
+
+                $this->Flash->success(__('Le QCM RIASEC a été sauvegardé.'));
+
+                return $this->redirect(['action' => 'index']);
+
+            } else {
+
+                $this->Flash->error(__('Le QCM RIASEC ne peut pas être sauvegardé. Merci de réessayer.'));
+
+            }
+
+        }
+
+        //$users = $this->Qcmriasecs->Users->find('list', ['limit' => 200]);
+
+        //$this->set(compact('qcmriasec', 'users'));
+
+		$this->set(compact('qcmriasec'));
+
+        $this->set('_serialize', ['qcmriasec']);
+
+    }
+
+
+
+    /**
+
+     * Edit method
+
+     *
+
+     * @param string|null $id Qcmriasec id.
+
+     * @return void Redirects on successful edit, renders view otherwise.
+
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+
+     */
+
+    public function edit($id = null)
+
+    {
+
+        $qcmriasec = $this->Qcmriasecs->get($id, [
+
+            'contain' => []
+
+        ]);
+
+        if ($this->request->is(['patch', 'post', 'put'])) {
+
+            $qcmriasec = $this->Qcmriasecs->patchEntity($qcmriasec, $this->request->data);
+
+            if ($this->Qcmriasecs->save($qcmriasec)) {
+
+                $this->Flash->success(__('Le QCM RIASEC a été sauvegardé.'));
+
+                return $this->redirect(['action' => 'index']);
+
+            } else {
+
+                $this->Flash->error(__('Le QCM RIASEC ne peut pas être sauvegardé. Merci de réessayer.'));
+
+            }
+
+        }
+
+        //$users = $this->Qcmriasecs->Users->find('list', ['limit' => 200]);
+
+        //$this->set(compact('qcmriasec', 'users'));
+
+		$this->set(compact('qcmriasec'));
+
+        $this->set('_serialize', ['qcmriasec']);
+
+    }
+
+
+
+    /**
+
+     * Delete method
+
+     *
+
+     * @param string|null $id Qcmriasec id.
+
+     * @return \Cake\Network\Response|null Redirects to index.
+
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+
+     */
+
+    public function delete($id = null)
+
+    {
+
+        $this->request->allowMethod(['post', 'delete']);
+
+        $qcmriasec = $this->Qcmriasecs->get($id);
+
+        if ($this->Qcmriasecs->delete($qcmriasec)) {
+
+            $this->Flash->success(__('Le QCM RIASEC a été supprimé.'));
+
+        } else {
+
+            $this->Flash->error(__('Le QCM RIASEC ne peut pas être supprimé. Merci de réessayer.'));
+
+        }
+
+        return $this->redirect(['action' => 'index']);
+
+    }
+
+}
+
