@@ -1,0 +1,145 @@
+<?php
+namespace App\Controller;
+
+use App\Controller\AppController;
+use Cake\ORM\TableRegistry;
+use Cake\I18n\Time;
+use Cake\Error\Debugger;
+
+/**
+ * Documents Controller
+ *
+ * @property \App\Model\Table\DocumentsTable $Documents
+ */
+class DocumentsController extends AppController
+{
+
+    /**
+     * Index method
+     *
+     * @return void
+     */
+    public function index()
+    {
+        $this->paginate = [
+			'contain' => ['Users', 'Typedocuments']
+		];
+		$this->set('documents', $this->paginate($this->Documents));
+        $this->set('_serialize', ['documents']);
+		
+		/*$this->paginate = [
+            'contain' => ['Users']
+        ];*/
+		/*$this->paginate = [
+			'conditions' => [
+				'Privatesmessages.user_id2' => $this->Auth->user('id'),
+			]
+		];
+        $this->set('privatesmessages', $this->paginate($this->Privatesmessages));
+        $this->set('_serialize', ['privatesmessages']);*/
+    }
+	
+    /**
+     * View method
+     *
+     * @param string|null $id Document id.
+     * @return void
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+     */
+    public function view($id = null)
+    {
+        $document = $this->Documents->get($id, [
+            'contain' => ['Users']
+        ]);
+        $this->set('document', $document);
+        $this->set('_serialize', ['document']);
+    }
+
+    /**
+     * Add method
+     *
+     * @return void Redirects on successful add, renders view otherwise.
+     */
+    public function add()
+    {
+        $document = $this->Documents->newEntity();
+        if ($this->request->is('post')) {
+            $document = $this->Documents->patchEntity($document, $this->request->data);
+			if ($this->Documents->save($document)) {
+                $this->Flash->success(__('Le Document a bien été enregistré.'));
+                return $this->redirect(['action' => 'index']);
+            } else {
+                $this->Flash->error(__('Le Document n\'a pas pu être enregistré. Veuillez réessayer.'));
+            }
+        }
+        $users = $this->Documents->Users->find('list', ['limit' => 200]);
+		$typedocuments = $this->Documents->Typedocuments->find('list',	['keyField' => 'id',
+																		 'valueField' => 'typedoc'], 
+																		['limit' => 200])->toArray();
+        $this->set(compact('document', 'users', 'typedocuments'));
+        $this->set('_serialize', ['document']);
+    }
+	
+	/* Publication d'un Document */
+	public function publiedocument($id = null)
+    {
+		$this->autoRender = false;
+		$document = TableRegistry::get('Documents');
+		// Commence une nouvelle requête.
+		$query = $document->find();	
+		$now = Time::now();
+		if ($query->update()->set(['datemisligne' => $now->i18nFormat('YYYY-MM-dd_HH-mm-ss')])
+							->where(['id' => $id])
+							->execute()) {
+			$this->Flash->success('Le document a bien été partagé.');
+			return $this->redirect(['action' => 'index']);
+		} else {
+			$this->Flash->error('Le document n\'a pas pu être partagé. Veuillez réessayer.');
+		}
+	}
+	
+	/**
+     * Edit method
+     *
+     * @param string|null $id Document id.
+     * @return void Redirects on successful edit, renders view otherwise.
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+     */
+    /*public function edit($id = null)
+    {
+        $document = $this->Documents->get($id, [
+            'contain' => []
+        ]);
+        if ($this->request->is(['patch', 'post', 'put'])) {
+            $document = $this->Documents->patchEntity($document, $this->request->data);
+            if ($this->Documents->save($document)) {
+                $this->Flash->success(__('The document has been saved.'));
+                return $this->redirect(['action' => 'index']);
+            } else {
+                $this->Flash->error(__('The document could not be saved. Please, try again.'));
+            }
+        }
+        $users = $this->Documents->Users->find('list', ['limit' => 200]);
+        $this->set(compact('document', 'users'));
+        $this->set('_serialize', ['document']);
+    }*/
+
+    /**
+     * Delete method
+     *
+     * @param string|null $id Document id.
+     * @return void Redirects to index.
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+     */
+    public function delete($id = null)
+    {
+        $this->request->allowMethod(['post', 'delete']);
+        $document = $this->Documents->get($id);
+        if ($this->Documents->delete($document)) {
+            $this->Flash->success(__('Le document a bien été supprimé.'));
+        } else {
+            $this->Flash->error(__('Le document n\'a pas pu être supprimé. Veuillez réessayer.'));
+        }
+        return $this->redirect(['action' => 'index']);
+    }
+}
