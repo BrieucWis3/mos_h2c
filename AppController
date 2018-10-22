@@ -1,0 +1,140 @@
+<?php
+/**
+ * CakePHP(tm) : Rapid Development Framework (http://cakephp.org)
+ * Copyright (c) Cake Software Foundation, Inc. (http://cakefoundation.org)
+ *
+ * Licensed under The MIT License
+ * For full copyright and license information, please see the LICENSE.txt
+ * Redistributions of files must retain the above copyright notice.
+ *
+ * @copyright Copyright (c) Cake Software Foundation, Inc. (http://cakefoundation.org)
+ * @link      http://cakephp.org CakePHP(tm) Project
+ * @since     0.2.9
+ * @license   http://www.opensource.org/licenses/mit-license.php MIT License
+ */
+namespace App\Controller;
+
+use Cake\Controller\Controller;
+use Cake\Event\Event;
+
+/**
+ * Application Controller
+ *
+ * Add your application-wide methods in the class below, your controllers
+ * will inherit them.
+ *
+ * @link http://book.cakephp.org/3.0/en/controllers.html#the-app-controller
+ */
+class AppController extends Controller
+{
+
+	/*public $helpers = ['AkkaCKEditor.CKEditor'=> [
+        'distribution' => 'full-all' 				// Default Option / Other options => 'basic', 'standard', 'standard-all', 'full-all'
+    ]];*/
+
+	/*public $helpers = ['AkkaCKEditor.CKEditor' => [
+        'version' => '4.4.7', 						// Default Option
+        'distribution' => 'full-all',				// Default Option / Other options => 'basic', 'standard', 'standard-all', 'full-all'
+    ]];*/
+
+	/*<script src="http://cdn.ckeditor.com/4.5.0/standard-all/ckeditor.js"></script>*/
+
+	public $helpers = ['CKEditor'=> [
+        'distribution' => 'full-all', 				// Default Option / Other options => 'basic', 'standard', 'standard-all', 'full-all'
+		'src' => 'http://cdn.ckeditor.com/4.5.0/standard-all/ckeditor.js'
+    ]];
+
+	public function beforeFilter(Event $event) {
+		$this->set('user', $this->Auth->user());
+	}
+
+    /**
+     * Initialization hook method.
+     *
+     * Use this method to add common initialization code like loading components.
+     *
+     * @return void
+     */
+    public function initialize()
+    {
+        parent::initialize();
+		/* TCPDF */
+		$this->loadComponent('RequestHandler');
+
+		$this->loadComponent('Flash');
+
+		/*$this->loadComponent('Auth', [
+			'authorize' => ['Controller'], // Ajout de cette ligne
+			'loginRedirect' => [
+				'controller' => 'Articles',
+				'action' => 'index'
+			],
+			'logoutRedirect' => [
+				'controller' => 'Pages',
+				'action' => 'display',
+				'home'
+			]
+		]);*/
+
+        $this->loadComponent('Auth', [
+			'authorize'=> 'Controller',
+            'authenticate' => [
+                'Form' => [
+                    'fields' => [
+                        'username' => 'email',
+                        'password' => 'password'
+                    ]
+                ]
+            ],
+            'loginAction' => [
+                'controller' => 'Users',
+                'action' => 'login'
+            ],
+			'loginRedirect' => [
+				'controller' => 'Bookmarks',
+				'action' => 'index'
+			],
+			'logoutRedirect' => [
+				'controller' => 'Users',
+				'action' => 'login'
+			],
+			'unauthorizedRedirect' => $this->referer()
+        ]);
+
+        // Autorise l'action display pour que notre controller de pages
+        // continue de fonctionner.
+        $this->Auth->allow(['display']);
+    }
+
+	public function isAuthorized($user)
+	{
+		// Admin peuvent accéder à chaque action
+		//if (isset($user['profil_id']) && $user['profil_id'] !== 1 && $user['profil_id'] !== 2) {
+
+		//if (isset($user['profil_id']) && in_array($user['profil_id'], [3])) {
+		//	return true;
+		//}
+
+		// Par défaut refuser
+		//return false;
+
+		//return true;
+		$childClass = get_called_class();
+
+		if(method_exists($childClass, '_isAuthorized'))
+			return $childClass::_isAuthorized($user, $this -> request);
+
+		return static::_isAuthorized($user, $request);
+	}
+
+	static public function _isAuthorized($user, $request)
+	{
+		//if ($user['role'] == 'admin')
+		if (($user['profil_id'] == 3) || ($user['profil_id'] == 2) || ($user['profil_id'] == 1) || ($user['profil_id'] == 7) || ($user['profil_id'] == 8) || ($user['profil_id'] == 9)
+			|| ($user['profil_id'] == 10) || ($user['profil_id'] == 11) || ($user['profil_id'] == 12))
+			return true;
+
+		return false; // By default deny any unwanted access
+	}
+
+}
