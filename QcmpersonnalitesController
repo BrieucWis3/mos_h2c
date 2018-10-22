@@ -1,0 +1,148 @@
+<?php
+namespace App\Controller;
+
+use App\Controller\AppController;
+use Cake\View\View;
+use Cake\ORM\TableRegistry;
+use Cake\Error\Debugger;
+use Cake\I18n\Time;
+
+/**
+ * Qcmpersonnalites Controller
+ *
+ * @property \App\Model\Table\QcmpersonnalitesTable $Qcmpersonnalites
+ */
+class QcmpersonnalitesController extends AppController
+{
+
+    /**
+     * Index method
+     *
+     * @return void
+     */
+    public function index()
+    {
+        $this->set('qcmpersonnalites', $this->paginate($this->Qcmpersonnalites));
+        $this->set('_serialize', ['qcmpersonnalites']);
+    }
+
+    /**
+     * View method
+     *
+     * @param string|null $id Qcmpersonnalite id.
+     * @return void
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+     */
+    public function view($id = null)
+    {
+        $qcmpersonnalite = $this->Qcmpersonnalites->get($id, [
+            'contain' => []
+        ]);
+        $this->set('qcmpersonnalite', $qcmpersonnalite);
+        $this->set('_serialize', ['qcmpersonnalite']);
+    }
+
+    /**
+     * Add method
+     *
+     * @return void Redirects on successful add, renders view otherwise.
+     */
+    public function add()
+    {
+        $qcmpersonnalite = $this->Qcmpersonnalites->newEntity();
+        if ($this->request->is('post')) {
+            $qcmpersonnalite = $this->Qcmpersonnalites->patchEntity($qcmpersonnalite, $this->request->data);
+            if ($this->Qcmpersonnalites->save($qcmpersonnalite)) {
+                $this->Flash->success(__('Le QCM de Personnalité a été sauvegardé.'));
+                return $this->redirect(['action' => 'index']);
+            } else {
+                $this->Flash->error(__('Le QCM de Personnalité ne peut pas être sauvegardé. Merci de réessayer.'));
+            }
+        }
+        $this->set(compact('qcmpersonnalite'));
+        $this->set('_serialize', ['qcmpersonnalite']);
+    }
+
+	/**
+	 * Duplicate method
+	 *
+	 * @return void Redirects on successful duplicate, renders view otherwise.
+	 */
+	public function duplicate($id = null)
+	{
+		$qcmpersonnalite = $this->Qcmpersonnalites->get($id);
+		$QcmpersonnalitesTable = TableRegistry::get('Qcmpersonnalites');
+		$dupqcmpersonnalite = $QcmpersonnalitesTable->newEntity();
+		$dupqcmpersonnalite->user_id = $this->Auth->user('id');
+		$dupqcmpersonnalite->qcm_q1 = $qcmpersonnalite->qcm_q1;
+		$dupqcmpersonnalite->qcm_q2 = $qcmpersonnalite->qcm_q2;
+		$dupqcmpersonnalite->qcm_q3 = $qcmpersonnalite->qcm_q3;
+		$dupqcmpersonnalite->qcm_q4 = $qcmpersonnalite->qcm_q4;
+		$dupqcmpersonnalite->qcm_q5 = $qcmpersonnalite->qcm_q5;
+		$dupqcmpersonnalite->qcm_q6 = $qcmpersonnalite->qcm_q6;
+		$dupqcmpersonnalite->qcm_q7 = $qcmpersonnalite->qcm_q7;
+		$dupqcmpersonnalite->qcm_q8 = $qcmpersonnalite->qcm_q8;
+		$dupqcmpersonnalite->qcm_q9 = $qcmpersonnalite->qcm_q9;
+		$dupqcmpersonnalite->qcm_q10 = $qcmpersonnalite->qcm_q10;
+		$dupqcmpersonnalite->qcm_q11 = $qcmpersonnalite->qcm_q11;
+		$dupqcmpersonnalite->qcm_q12 = $qcmpersonnalite->qcm_q12;
+		$now = Time::now();
+		$dupqcmpersonnalite->created = $now->i18nFormat('YYYY-MM-dd_HH-mm-ss');
+		$dupqcmpersonnalite->modified = $qcmpersonnalite->modified;
+		if ($QcmpersonnalitesTable->save($dupqcmpersonnalite)) {
+			// L'entity $article contient maintenant l'id
+			$id = $dupqcmpersonnalite->id;
+		}
+		if ($this->Qcmpersonnalites->save($dupqcmpersonnalite)) {
+			$this->Flash->success(__('Le QCM Personnalité a été dupliqué.'));
+			return $this->redirect(['action' => 'index']);
+		} else {
+			$this->Flash->error(__('Le QCM Personnalité ne peut pas être dupliqué. Merci de réessayer.'));
+		}
+		$this->set(compact('qcmpersonnalite'));
+	}
+
+    /**
+     * Edit method
+     *
+     * @param string|null $id Qcmpersonnalite id.
+     * @return void Redirects on successful edit, renders view otherwise.
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+     */
+    public function edit($id = null)
+    {
+        $qcmpersonnalite = $this->Qcmpersonnalites->get($id, [
+            'contain' => []
+        ]);
+        if ($this->request->is(['patch', 'post', 'put'])) {
+            $qcmpersonnalite = $this->Qcmpersonnalites->patchEntity($qcmpersonnalite, $this->request->data);
+            if ($this->Qcmpersonnalites->save($qcmpersonnalite)) {
+                $this->Flash->success(__('Le QCM de Personnalité a été sauvegardé.'));
+                return $this->redirect(['action' => 'index']);
+            } else {
+                $this->Flash->error(__('Le QCM de Personnalité ne peut pas être sauvegardé. Merci de réessayer.'));
+            }
+        }
+        $this->set(compact('qcmpersonnalite'));
+        $this->set('_serialize', ['qcmpersonnalite']);
+    }
+
+    /**
+     * Delete method
+     *
+     * @param string|null $id Qcmpersonnalite id.
+     * @return void Redirects to index.
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+     */
+    public function delete($id = null)
+    {
+        $this->request->allowMethod(['post', 'delete']);
+        $qcmpersonnalite = $this->Qcmpersonnalites->get($id);
+        if ($this->Qcmpersonnalites->delete($qcmpersonnalite)) {
+            $this->Flash->success(__('Le QCM de Personnalité a été supprimé.'));
+        } else {
+            $this->Flash->error(__('Le QCM de Personnalité ne peut pas être supprimé. Merci de réessayer.'));
+        }
+        return $this->redirect(['action' => 'index']);
+    }
+}
