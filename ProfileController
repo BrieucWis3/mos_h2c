@@ -1,0 +1,105 @@
+<?php
+namespace App\Controller;
+
+use App\Controller\AppController;
+
+/**
+ * Profils Controller
+ *
+ * @property \App\Model\Table\ProfilsTable $Profils
+ */
+class ProfilsController extends AppController
+{
+
+    /**
+     * Index method
+     *
+     * @return void
+     */
+    public function index()
+    {
+        $this->set('profils', $this->paginate($this->Profils));
+        $this->set('_serialize', ['profils']);
+    }
+
+    /**
+     * View method
+     *
+     * @param string|null $id Profil id.
+     * @return void
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+     */
+    public function view($id = null)
+    {
+        $profil = $this->Profils->get($id, [
+            'contain' => []
+        ]);
+        $this->set('profil', $profil);
+        $this->set('_serialize', ['profil']);
+    }
+
+    /**
+     * Add method
+     *
+     * @return void Redirects on successful add, renders view otherwise.
+     */
+    public function add()
+    {
+        $profil = $this->Profils->newEntity();
+        if ($this->request->is('post')) {
+            $profil = $this->Profils->patchEntity($profil, $this->request->data);
+            if ($this->Profils->save($profil)) {
+                $this->Flash->success(__('Le Profil a été enregistré.'));
+                return $this->redirect(['action' => 'index']);
+            } else {
+                $this->Flash->error(__('Le Profil ne peut pas être enregistré. Merci de réessayer.'));
+            }
+        }
+        $this->set(compact('profil'));
+        $this->set('_serialize', ['profil']);
+    }
+
+    /**
+     * Edit method
+     *
+     * @param string|null $id Profil id.
+     * @return void Redirects on successful edit, renders view otherwise.
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+     */
+    public function edit($id = null)
+    {
+        $profil = $this->Profils->get($id, [
+            'contain' => []
+        ]);
+        if ($this->request->is(['patch', 'post', 'put'])) {
+            $profil = $this->Profils->patchEntity($profil, $this->request->data);
+            if ($this->Profils->save($profil)) {
+                $this->Flash->success(__('Le Profil a été enregistré.'));
+                return $this->redirect(['action' => 'index']);
+            } else {
+                $this->Flash->error(__('Le Profil ne peut pas être enregistré. Merci de réessayer.'));
+            }
+        }
+        $this->set(compact('profil'));
+        $this->set('_serialize', ['profil']);
+    }
+
+    /**
+     * Delete method
+     *
+     * @param string|null $id Profil id.
+     * @return void Redirects to index.
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+     */
+    public function delete($id = null)
+    {
+        $this->request->allowMethod(['post', 'delete']);
+        $profil = $this->Profils->get($id);
+        if ($this->Profils->delete($profil)) {
+            $this->Flash->success(__('Le Profil a été supprimée.'));
+        } else {
+            $this->Flash->error(__('Le Profil ne peut pas être supprimé. Merci de réessayer.'));
+        }
+        return $this->redirect(['action' => 'index']);
+    }
+}
